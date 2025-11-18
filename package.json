@@ -9,8 +9,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^9.1.2",
-    "@astrojs/react": "^4.2.1",
+    "@astrojs/node": "^9.5.1",
+    "@astrojs/react": "^4.4.2",
     "@headlessui/react": "^2.2.0",
     "@tailwindcss/vite": "^4.0.9",
     "@tanstack/react-query": "^5.66.11",
@@ -31,9 +31,9 @@
   },
   "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
   "devDependencies": {
-    "@astrojs/tailwind": "^6.0.0",
+    "@astrojs/tailwind": "^6.0.2",
     "@tailwindcss/postcss": "^4.0.9",
-    "astro": "^5.4.1",
+    "astro": "^5.15.9",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"

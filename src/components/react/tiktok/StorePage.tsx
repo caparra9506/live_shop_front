@@ -16,6 +16,12 @@ export default function StorePage({ store }: { store: string }) {
     phone: "",
     email: "",
     address: "",
+    documentType: "",
+    document: "",
+    countryId: "",
+    departmentId: "",
+    cityId: "",
+    typePerson: "",
   });
   const [registering, setRegistering] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -34,17 +40,27 @@ export default function StorePage({ store }: { store: string }) {
     // 1️⃣ Cargar países desde el backend
     axios
       .get(`${API_BASE_URL}/api/location/countries`)
-      .then((res) => setCountries(res.data))
-      .catch(() => console.error("Error cargando países"));
+      .then((res) => {
+        console.log('Countries loaded:', res.data);
+        setCountries(res.data);
+      })
+      .catch((err) => console.error("Error cargando países:", err));
 
-    // 2️⃣ Mostrar el popup después de 1 segundo
+    // 2️⃣ Mostrar el popup después de 1 segundo solo si no hay usuario registrado
     const timer = setTimeout(() => {
-      setShowPopup(true);
+      const userTikTokId = sessionStorage.getItem("userTikTokId");
+      console.log('🔍 Checking userTikTokId:', userTikTokId);
+      if (!userTikTokId || userTikTokId === 'null' || userTikTokId === '') {
+        console.log('👤 No user found, showing popup');
+        setShowPopup(true);
+      } else {
+        console.log('✅ User already registered:', userTikTokId);
+      }
     }, 1000);
 
     // Limpiar el timer si el componente se desmonta
     return () => clearTimeout(timer);
-  }, [setShowPopup]); // Agregamos setShowPopup como dependencia
+  }, []);
 
   const fetchDepartments = (countryId) => {
     axios
@@ -61,10 +77,10 @@ export default function StorePage({ store }: { store: string }) {
   };
 
   const handleChange = (name, value) => {
-    setStoreData((prev) => ({ ...prev, [name]: value }));
+    setTiktokUser((prev) => ({ ...prev, [name]: value }));
 
     if (name === "countryId") {
-      setStoreData((prev) => ({
+      setTiktokUser((prev) => ({
         ...prev,
         countryId: value,
         departmentId: "",
@@ -74,7 +90,7 @@ export default function StorePage({ store }: { store: string }) {
     }
 
     if (name === "departmentId") {
-      setStoreData((prev) => ({ ...prev, departmentId: value, cityId: "" }));
+      setTiktokUser((prev) => ({ ...prev, departmentId: value, cityId: "" }));
       fetchCities(value);
     }
   };
@@ -82,7 +98,7 @@ export default function StorePage({ store }: { store: string }) {
   const fetchCartCount = async (userTikTokId: string) => {
     try {
       const res = await axios.get(
-        `${API_BASE_URL}/api/cart/user/${userTikTokId}/store/${store}`
+        `${API_BASE_URL}/api/cart/user/${userTikTokId}?storeName=${encodeURIComponent(store)}`
       );
       if (res.data?.data?.cartItems) {
         const totalItems = res.data.data.cartItems.reduce(
@@ -100,9 +116,15 @@ export default function StorePage({ store }: { store: string }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log(`Loading store data for: ${store}`);
         const storeRes = await axios.get(
           `${API_BASE_URL}/api/stores/store/${store}`
         );
+        console.log('Store data loaded:', storeRes.data);
+        console.log('Categories found:', storeRes.data.categories?.length || 0);
+        if (storeRes.data.categories?.length > 0) {
+          console.log('First category products:', storeRes.data.categories[0].products?.length || 0);
+        }
         setStoreData(storeRes.data);
         setCategories(storeRes.data.categories || []);
 
@@ -110,6 +132,7 @@ export default function StorePage({ store }: { store: string }) {
         const configRes = await axios.get(
           `${API_BASE_URL}/api/store-config/public/${store}`
         );
+        console.log('Store config loaded:', configRes.data);
         setStoreConfig(configRes.data);
 
         // Cargar contador del carrito si el usuario está registrado y el carrito está habilitado
@@ -119,22 +142,34 @@ export default function StorePage({ store }: { store: string }) {
         }
       } catch (error) {
         console.error("Error loading store data:", error);
+        if (error.response) {
+          console.error("Response data:", error.response.data);
+          console.error("Response status:", error.response.status);
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    
+    if (store) {
+      fetchData();
+    } else {
+      console.error("Store parameter is missing");
+      setLoading(false);
+    }
   }, [store]);
 
   // Filtrar productos basado en búsqueda y categoría
   useEffect(() => {
+    console.log('Processing categories for products:', categories.length);
     let allProducts = categories.flatMap((category) => 
-      category.products.map((product: any) => ({
+      (category.products || []).map((product: any) => ({
         ...product,
         categoryId: category.id,
         categoryName: category.name
       }))
     );
+    console.log('All products found:', allProducts.length);
 
     // Filtrar por categoría
     if (selectedCategory !== null) {
@@ -166,37 +201,52 @@ export default function StorePage({ store }: { store: string }) {
     e.preventDefault();
     setRegistering(true);
     try {
+      // Validation
+      if (!tiktokUser.name || !tiktokUser.tiktok || !tiktokUser.phone || !tiktokUser.email || 
+          !tiktokUser.documentType || !tiktokUser.document || !tiktokUser.countryId || 
+          !tiktokUser.departmentId || !tiktokUser.cityId || !tiktokUser.typePerson || !tiktokUser.address) {
+        alert("Por favor completa todos los campos requeridos");
+        setRegistering(false);
+        return;
+      }
 
       const submissionData = {
-        ...tiktokUser,
-        documentType: storeData.documentType || tiktokUser.documentType,
-        document: storeData.document || tiktokUser.documentNumber, // Note: different field names
-        country: storeData.countryId, 
-        department: storeData.departmentId,
-        city: storeData.cityId,
-        personType: storeData.typePerson,
+        tiktok: tiktokUser.tiktok,
+        name: tiktokUser.name,
+        phone: tiktokUser.phone,
+        email: tiktokUser.email,
+        address: tiktokUser.address,
+        documentType: tiktokUser.documentType,
+        document: tiktokUser.document,
+        country: parseInt(tiktokUser.countryId), 
+        department: parseInt(tiktokUser.departmentId),
+        city: parseInt(tiktokUser.cityId),
+        personType: tiktokUser.typePerson,
       };
 
-      console.log('tiktokUser ', submissionData);
+      console.log('Submitting user data: ', submissionData);
       
       const resp = await axios.post(
         `${API_BASE_URL}/api/tiktokuser/register/${store}`,
         submissionData
       );
 
-      console.log('resp ', resp);
+      console.log('Registration response: ', resp);
 
       if (resp.data.id && !isNaN(Number(resp.data.id))) {
-        sessionStorage.setItem("userTikTokId", resp.data.id);
-        sessionStorage.setItem("storeId", resp.data.store.id);
+        sessionStorage.setItem("userTikTokId", resp.data.id.toString());
+        sessionStorage.setItem("storeId", resp.data.store.id.toString());
+        // Refresh cart count after registration
+        if (storeConfig?.cartEnabled) {
+          fetchCartCount(resp.data.id.toString());
+        }
       }
 
       alert("Usuario registrado con éxito");
       setShowPopup(false);
-      //setTiktokUser({ tiktok: "", name: "", phone: "", address: "" });
     } catch (error) {
       console.error("Error registrando usuario:", error);
-      alert("Error al registrar usuario");
+      alert("Error al registrar usuario: " + (error.response?.data?.message || error.message));
     } finally {
       setRegistering(false);
     }
@@ -236,6 +286,10 @@ export default function StorePage({ store }: { store: string }) {
       
       if (response.data.cartId) {
         alert("✅ Producto agregado al baúl");
+        // Actualizar el contador del carrito
+        if (storeConfig?.cartEnabled) {
+          fetchCartCount(userIdTiktok);
+        }
         // Opcional: redirigir al carrito
         // window.location.href = `/cart/${response.data.cartId}?token=${response.data.token}`;
       }
@@ -247,7 +301,25 @@ export default function StorePage({ store }: { store: string }) {
 
   if (loading) {
     return (
-      <h2 className="text-center text-2xl mt-10 font-semibold">Cargando...</h2>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-semibold text-gray-700">Cargando tienda...</h2>
+          <p className="text-gray-500 mt-2">Preparando la mejor experiencia para ti</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!storeData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-red-600">Tienda no encontrada</h2>
+          <p className="text-gray-600 mt-2">No pudimos encontrar la tienda "{store}"</p>
+          <p className="text-gray-500 mt-4">Verifique la URL o contacte al administrador</p>
+        </div>
+      </div>
     );
   }
 
@@ -366,7 +438,7 @@ export default function StorePage({ store }: { store: string }) {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Persona *</label>
                       <select
                         name="typePerson"
-                        value={storeData.typePerson}
+                        value={tiktokUser.typePerson}
                         onChange={(e) => handleChange("typePerson", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         required
@@ -383,7 +455,7 @@ export default function StorePage({ store }: { store: string }) {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento *</label>
                       <select
                         name="documentType"
-                        value={storeData.documentType}
+                        value={tiktokUser.documentType}
                         onChange={(e) => handleChange("documentType", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         required
@@ -401,6 +473,7 @@ export default function StorePage({ store }: { store: string }) {
                       <input
                         type="text"
                         name="document"
+                        value={tiktokUser.document}
                         placeholder="Ingrese su número de documento"
                         onChange={(e) => handleChange("document", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
@@ -427,9 +500,10 @@ export default function StorePage({ store }: { store: string }) {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">País *</label>
                       <select
-                        value={storeData.countryId}
+                        value={tiktokUser.countryId}
                         onChange={(e) => handleChange("countryId", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        required
                       >
                         <option value="">Selecciona un país</option>
                         {countries.map((country) => (
@@ -442,10 +516,11 @@ export default function StorePage({ store }: { store: string }) {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Departamento *</label>
                       <select
-                        value={storeData.departmentId}
+                        value={tiktokUser.departmentId}
                         onChange={(e) => handleChange("departmentId", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={!storeData.countryId}
+                        disabled={!tiktokUser.countryId}
+                        required
                       >
                         <option value="">Selecciona un departamento</option>
                         {departments.map((department) => (
@@ -458,10 +533,11 @@ export default function StorePage({ store }: { store: string }) {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad *</label>
                       <select
-                        value={storeData.cityId}
+                        value={tiktokUser.cityId}
                         onChange={(e) => handleChange("cityId", e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={!storeData.departmentId}
+                        disabled={!tiktokUser.departmentId}
+                        required
                       >
                         <option value="">Selecciona una ciudad</option>
                         {cities.map((city) => (
@@ -568,7 +644,7 @@ export default function StorePage({ store }: { store: string }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
                   </svg>
                   <span className="absolute -top-1 -right-1 h-5 w-5 bg-blue-600 rounded-full flex items-center justify-center text-xs text-white">
-                    0
+                    {cartItemCount}
                   </span>
                 </button>
               )}

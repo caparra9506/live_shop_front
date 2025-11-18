@@ -27,15 +27,9 @@ export default function ExpiredCartPayment({ cartId, token }: ExpiredCartPayment
     try {
       setLoading(true);
       
-      // Usar token especial para carritos expirados
+      // Cargar carrito expirado
       const response = await axios.get(
-        `${API_BASE_URL}/api/cart/expired/${cartId}`,
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Cart-Access-Token': token 
-          }
-        }
+        `${API_BASE_URL}/api/cart/expired/${cartId}`
       );
 
       if (response.data.success) {
@@ -103,13 +97,7 @@ export default function ExpiredCartPayment({ cartId, token }: ExpiredCartPayment
 
       const response = await axios.post(
         `${API_BASE_URL}/api/sales/from-expired-cart`,
-        saleData,
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Cart-Access-Token': token 
-          }
-        }
+        saleData
       );
 
       if (response.data.success && response.data.urlBanco) {

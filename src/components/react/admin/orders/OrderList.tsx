@@ -443,7 +443,9 @@ export default function OrderList() {
                         {order.orderType === 'CART' ? `BL-${order.id}` : `OR-${order.id}`}
                       </td>
                       <td className="p-3">{order.saleDetails[0]?.tiktokUser?.name || 'N/A'}</td>
-                      <td className="p-3">{order.saleDetails[0]?.product?.name || 'N/A'}</td>
+                      <td className="p-3">
+                        {order.saleDetails?.map(detail => detail.product?.name).join(', ') || 'N/A'}
+                      </td>
                       <td className="p-3">{order.saleDetails?.reduce((sum, detail) => sum + detail.quantity, 0) || 1}</td>
                       <td className="p-3">
                         {new Date(order.createdAt).toLocaleDateString("es-CO")}
@@ -533,6 +535,51 @@ export default function OrderList() {
                                   ${parseFloat(order.totalAmount).toLocaleString()} COP
                                 </span>
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Detalles de productos */}
+                          <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                            <h4 className="text-sm font-semibold text-green-800 mb-3">🛍️ Productos</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {order.saleDetails?.map((detail, index) => (
+                                <div key={index} className="bg-white p-3 rounded-lg border border-green-200">
+                                  <div className="flex items-start gap-3">
+                                    {detail.product?.imageUrl && (
+                                      <img 
+                                        src={detail.product.imageUrl} 
+                                        alt={detail.product.name}
+                                        className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                                      />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <h5 className="text-sm font-medium text-gray-900 truncate">
+                                        {detail.product?.name || 'Producto sin nombre'}
+                                      </h5>
+                                      {detail.productVariant && (
+                                        <div className="mt-1 space-y-1">
+                                          {detail.productVariant.color && (
+                                            <p className="text-xs text-gray-600">
+                                              Color: <span className="font-medium">{detail.productVariant.color.name}</span>
+                                            </p>
+                                          )}
+                                          {detail.productVariant.size && (
+                                            <p className="text-xs text-gray-600">
+                                              Talla: <span className="font-medium">{detail.productVariant.size.name}</span>
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                      <div className="mt-2 flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Cant: {detail.quantity}</span>
+                                        <span className="text-sm font-semibold text-green-600">
+                                          ${Number(detail.price).toLocaleString('es-CO')} COP
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
 
