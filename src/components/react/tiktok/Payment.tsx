@@ -493,9 +493,14 @@ export default function Payment() {
   let subtotal = 0;
   if (isCartCheckout && cart) {
     // Calcular subtotal desde el carrito
+    console.log('🛒 Cart items:', cart.cartItems);
     subtotal = cart.cartItems.reduce((sum, item) => {
-      return sum + (parseFloat(item.unitPrice) * item.quantity);
+      const itemPrice = parseFloat(item.price) || 0;
+      const itemQty = item.quantity || 0;
+      console.log(`Item: ${item.product?.name}, Price: ${itemPrice}, Qty: ${itemQty}, Subtotal: ${itemPrice * itemQty}`);
+      return sum + (itemPrice * itemQty);
     }, 0);
+    console.log('💰 Total subtotal:', subtotal);
   } else if (product) {
     // Calcular subtotal desde producto individual
     subtotal = product.price * quantity;
