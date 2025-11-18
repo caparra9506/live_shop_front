@@ -143,9 +143,11 @@ export default function Payment() {
     setIsFetchingShipping(true);
 
     const productId = sessionStorage.getItem("productId");
+    const cartId = sessionStorage.getItem("cartId");
+    const isCart = sessionStorage.getItem("isCartCheckout") === "true";
     const userTikTokId = sessionStorage.getItem("userTikTokId");
     let store = sessionStorage.getItem("storeName");
-    
+
     // Si no hay storeName en sessionStorage, extraerlo de la URL
     if (!store) {
       const pathParts = window.location.pathname.split('/');
@@ -155,14 +157,28 @@ export default function Payment() {
         sessionStorage.setItem("storeName", store);
       }
     }
+
+    console.log('🚚 Cotizar Envío - Mode:', isCart ? 'CART' : 'PRODUCT');
+    console.log('cartId:', cartId, 'productId:', productId);
+
     try {
+      const requestData: any = {
+        userTikTokId: userTikTokId,
+        storeName: store,
+      };
+
+      // Modo carrito o producto individual
+      if (isCart && cartId) {
+        requestData.cartId = cartId;
+      } else if (productId) {
+        requestData.productId = productId;
+      }
+
+      console.log('📦 Shipping quote request:', requestData);
+
       const res = await axios.post(
         `${API_BASE_URL}/api/shipments/shipment-quote`,
-        {
-          userTikTokId: userTikTokId,
-          productId: productId,
-          storeName: store,
-        }
+        requestData
       );
 
       if (res.data) {
@@ -171,9 +187,11 @@ export default function Payment() {
           ...details,
         }));
         setShippingOptions(options);
+        console.log('✅ Shipping options received:', options.length);
       }
     } catch (error) {
-      console.error("Error al cotizar el envío:", error);
+      console.error("❌ Error al cotizar el envío:", error);
+      console.error("Response:", error.response?.data);
       setShippingOptions([]);
     } finally {
       setIsFetchingShipping(false);
