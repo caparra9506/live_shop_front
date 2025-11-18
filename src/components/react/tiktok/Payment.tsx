@@ -142,10 +142,10 @@ export default function Payment() {
   const cotizarEnvio = async () => {
     setIsFetchingShipping(true);
 
-    const productId = sessionStorage.getItem("productId");
+    // Priorizar estados sobre sessionStorage
     const userTikTokId = sessionStorage.getItem("userTikTokId");
     let store = sessionStorage.getItem("storeName");
-    
+
     // Si no hay storeName en sessionStorage, extraerlo de la URL
     if (!store) {
       const pathParts = window.location.pathname.split('/');
@@ -155,14 +155,36 @@ export default function Payment() {
         sessionStorage.setItem("storeName", store);
       }
     }
+
+    console.log('🚚 Cotizar Envío - Mode:', isCartCheckout ? 'CART' : 'PRODUCT');
+    console.log('isCartCheckout state:', isCartCheckout);
+    console.log('cart state:', cart);
+    console.log('product state:', product);
+
     try {
+      const requestData: any = {
+        userTikTokId: userTikTokId,
+        storeName: store,
+      };
+
+      // Modo carrito o producto individual - usar ESTADOS no sessionStorage
+      if (isCartCheckout && cart && cart.id) {
+        requestData.cartId = cart.id.toString();
+        console.log('📦 Cart mode - cartId:', cart.id);
+      } else if (product && product.id) {
+        requestData.productId = product.id.toString();
+        console.log('📦 Product mode - productId:', product.id);
+      } else {
+        console.error('❌ No cart or product available for shipping quote');
+        console.error('isCartCheckout:', isCartCheckout, 'cart:', cart, 'product:', product);
+        throw new Error('No product or cart information available');
+      }
+
+      console.log('📦 Shipping quote request:', requestData);
+
       const res = await axios.post(
         `${API_BASE_URL}/api/shipments/shipment-quote`,
-        {
-          userTikTokId: userTikTokId,
-          productId: productId,
-          storeName: store,
-        }
+        requestData
       );
 
       if (res.data) {
@@ -171,9 +193,11 @@ export default function Payment() {
           ...details,
         }));
         setShippingOptions(options);
+        console.log('✅ Shipping options received:', options.length);
       }
     } catch (error) {
-      console.error("Error al cotizar el envío:", error);
+      console.error("❌ Error al cotizar el envío:", error);
+      console.error("Response:", error.response?.data);
       setShippingOptions([]);
     } finally {
       setIsFetchingShipping(false);
