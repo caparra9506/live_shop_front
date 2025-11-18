@@ -447,17 +447,24 @@ export default function Payment() {
       const productsFromCart = cart.cartItems.map(item => ({
         productId: Number(item.product.id),
         quantity: Number(item.quantity),
-        price: Number(item.unitPrice),
+        price: Number(item.price), // FIXED: era item.unitPrice
         productVariantId: item.productVariant ? Number(item.productVariant.id) : undefined
       }));
+
+      console.log('🛒 Creating sale from cart:', {
+        products: productsFromCart,
+        shippingCost: shippingCostToUse,
+        selectedShippingOption,
+        total: subtotal + shippingCostToUse - totalDiscount
+      });
 
       saleData = {
         userTikTokId: Number(userTikTokId),
         storeName: store,
         products: productsFromCart,
         couponCode: couponCode || "",
-        shippingCost: cart.shippingCost ? parseFloat(cart.shippingCost) : 0,
-        transportadora: cart.shippingProvider || 'envio_gratis',
+        shippingCost: shippingCostToUse, // FIXED: usar el costo seleccionado
+        transportadora: selectedShippingOption ? selectedShippingOption.provider : 'envio_gratis',
         bankCode: selectedBank,
       };
     } else {
