@@ -466,6 +466,7 @@ export default function Payment() {
         shippingCost: shippingCostToUse, // FIXED: usar el costo seleccionado
         transportadora: selectedShippingOption ? selectedShippingOption.provider : 'envio_gratis',
         bankCode: selectedBank,
+        cartId: cart.id, // Para marcar el carrito como COMPLETED después de la venta
       };
     } else {
       // Modo producto individual (lógica existente)
