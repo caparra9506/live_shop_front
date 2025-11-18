@@ -225,9 +225,20 @@ export default function Cart({ userTikTokId, storeName, onCartChange }: CartProp
   };
 
   const processCartNow = async () => {
-    if (!cart) return;
+    console.log('🔵 processCartNow called');
+    console.log('Cart:', cart);
+    console.log('userTikTokId:', userTikTokId);
+    console.log('storeName:', storeName);
 
-    if (confirm('¿Procesar el carrito y realizar el pago ahora?')) {
+    if (!cart) {
+      console.error('❌ No cart found');
+      return;
+    }
+
+    const confirmResult = confirm('¿Procesar el carrito y realizar el pago ahora?');
+    console.log('Confirm result:', confirmResult);
+
+    if (confirmResult) {
       try {
         setLoading(true);
         setError(null);
@@ -238,6 +249,8 @@ export default function Cart({ userTikTokId, storeName, onCartChange }: CartProp
         sessionStorage.setItem('storeName', storeName);
         sessionStorage.setItem('isCartCheckout', 'true');
 
+        console.log('✅ SessionStorage saved, redirecting to:', `/tiktok/${storeName}/payment?userTikTokId=${userTikTokId}`);
+
         // Redirigir a la página de pago
         window.location.href = `/tiktok/${storeName}/payment?userTikTokId=${userTikTokId}`;
 
@@ -247,6 +260,8 @@ export default function Cart({ userTikTokId, storeName, onCartChange }: CartProp
       } finally {
         setLoading(false);
       }
+    } else {
+      console.log('❌ User cancelled');
     }
   };
 
