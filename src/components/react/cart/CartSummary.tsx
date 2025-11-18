@@ -14,9 +14,17 @@ export default function CartSummary({ cart, onProcessCart, loading }: CartSummar
 
   const totalItems = cart.cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const hasStockIssues = cart.cartItems.some(item => 
+  const hasStockIssues = cart.cartItems.some(item =>
     item.product.stock < item.quantity
   );
+
+  console.log('🛒 CartSummary Debug:', {
+    totalItems,
+    hasStockIssues,
+    loading,
+    buttonDisabled: loading || hasStockIssues || totalItems === 0,
+    cartItemsCount: cart.cartItems.length
+  });
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -105,7 +113,10 @@ export default function CartSummary({ cart, onProcessCart, loading }: CartSummar
 
       {/* Botón de acción */}
       <button
-        onClick={onProcessCart}
+        onClick={() => {
+          console.log('🔘 Button clicked!');
+          onProcessCart();
+        }}
         disabled={loading || hasStockIssues || totalItems === 0}
         className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
           hasStockIssues || totalItems === 0
