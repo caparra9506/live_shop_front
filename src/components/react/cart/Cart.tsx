@@ -232,10 +232,15 @@ export default function Cart({ userTikTokId, storeName, onCartChange }: CartProp
         setLoading(true);
         setError(null);
 
-        // Aquí iría la lógica para procesar el pago inmediatamente
-        // Por ahora solo simularemos el proceso
-        alert('Redirigiendo al proceso de pago...');
-        
+        // Guardar información del carrito en sessionStorage
+        sessionStorage.setItem('cartId', cart.id.toString());
+        sessionStorage.setItem('userTikTokId', userTikTokId.toString());
+        sessionStorage.setItem('storeName', storeName);
+        sessionStorage.setItem('isCartCheckout', 'true');
+
+        // Redirigir a la página de pago
+        window.location.href = `/tiktok/${storeName}/payment?userTikTokId=${userTikTokId}`;
+
       } catch (error: any) {
         console.error('Error procesando carrito:', error);
         setError(error.response?.data?.message || 'Error al procesar el carrito');

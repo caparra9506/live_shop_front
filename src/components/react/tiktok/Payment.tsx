@@ -38,6 +38,11 @@ export default function Payment() {
   const [selectedBank, setSelectedBank] = useState("");
   const [storeConfig, setStoreConfig] = useState({ cartTimeoutDays: 2, cartEnabled: true });
 
+  // Estados para checkout desde carrito
+  const [isCartCheckout, setIsCartCheckout] = useState(false);
+  const [cart, setCart] = useState(null);
+  const [loadingCart, setLoadingCart] = useState(false);
+
   useEffect(() => {
     const fetchBanks = async () => {
       const storeName = sessionStorage.getItem("storeName");
@@ -76,24 +81,16 @@ export default function Payment() {
 
   // Cargar datos desde sessionStorage y la API de usuario
   useEffect(() => {
-    // Verificar que estamos en el cliente
-    if (typeof window !== "undefined") {
-      const storedProduct = sessionStorage.getItem("product");
-      const storedColor = sessionStorage.getItem("color");
-      const storedSize = sessionStorage.getItem("size");
-      const storedQuantity = sessionStorage.getItem("quantity");
+    const loadData = async () => {
+      const userTikTokId = sessionStorage.getItem("userTikTokId");
+      const isCart = sessionStorage.getItem("isCartCheckout") === "true";
+      const cartId = sessionStorage.getItem("cartId");
 
-      if (storedProduct) setProduct(JSON.parse(storedProduct));
-      if (storedColor) setColor(storedColor);
-      if (storedSize) setSize(storedSize);
-      if (storedQuantity) setQuantity(parseInt(storedQuantity, 10));
-    }
+      setIsCartCheckout(isCart);
 
-    const userTikTokId = sessionStorage.getItem("userTikTokId");
-
-    axios
-      .get(`${API_BASE_URL}/api/tiktokuser/userId/` + userTikTokId)
-      .then((res) => {
+      // Cargar datos del usuario
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/tiktokuser/userId/${userTikTokId}`);
         if (res.data) {
           setUserData({
             name: res.data.name || "",
@@ -103,10 +100,42 @@ export default function Payment() {
             city: res.data.city?.name || "",
           });
         }
-      })
-      .catch((error) =>
-        console.error("Error al cargar datos del usuario:", error)
-      );
+      } catch (error) {
+        console.error("Error al cargar datos del usuario:", error);
+      }
+
+      // Si es checkout desde carrito, cargar el carrito
+      if (isCart && cartId) {
+        setLoadingCart(true);
+        try {
+          const cartRes = await axios.get(`${API_BASE_URL}/api/cart/${cartId}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          if (cartRes.data.success) {
+            setCart(cartRes.data.data);
+          }
+        } catch (error) {
+          console.error("Error al cargar carrito:", error);
+        } finally {
+          setLoadingCart(false);
+        }
+      } else {
+        // Modo producto individual (lógica existente)
+        if (typeof window !== "undefined") {
+          const storedProduct = sessionStorage.getItem("product");
+          const storedColor = sessionStorage.getItem("color");
+          const storedSize = sessionStorage.getItem("size");
+          const storedQuantity = sessionStorage.getItem("quantity");
+
+          if (storedProduct) setProduct(JSON.parse(storedProduct));
+          if (storedColor) setColor(storedColor);
+          if (storedSize) setSize(storedSize);
+          if (storedQuantity) setQuantity(parseInt(storedQuantity, 10));
+        }
+      }
+    };
+
+    loadData();
   }, []);
 
   // Cotizar envío
@@ -357,7 +386,7 @@ export default function Payment() {
 
     const userTikTokId = sessionStorage.getItem("userTikTokId");
     let store = sessionStorage.getItem("storeName");
-    
+
     // Si no hay storeName en sessionStorage, extraerlo de la URL
     if (!store) {
       const pathParts = window.location.pathname.split('/');
@@ -381,33 +410,56 @@ export default function Payment() {
       return;
     }
 
-    if (!product) {
-      alert("Error: No se pudo identificar el producto. Por favor, regresa a la página principal de la tienda.");
-      setLoadingSale(false);
-      return;
-    }
-
     if (!selectedBank) {
       alert("Error: Debes seleccionar un banco para proceder con el pago.");
       setLoadingSale(false);
       return;
     }
 
-    const saleData = {
-      userTikTokId: Number(userTikTokId),
-      storeName: store,
-      products: [
-        {
-          productId: Number(product.id),
-          quantity: Number(quantity),
-          price: Number(product.price),
-        },
-      ],
-      couponCode: couponCode || "",
-      shippingCost: selectedShippingOption ? selectedShippingCost : 0,
-      transportadora: selectedShippingOption ? selectedShippingOption.provider : 'envio_gratis',
-      bankCode: selectedBank, // 👈 agrega esto
-    };
+    let saleData;
+
+    // Si es checkout desde carrito
+    if (isCartCheckout && cart) {
+      const productsFromCart = cart.cartItems.map(item => ({
+        productId: Number(item.product.id),
+        quantity: Number(item.quantity),
+        price: Number(item.unitPrice),
+        productVariantId: item.productVariant ? Number(item.productVariant.id) : undefined
+      }));
+
+      saleData = {
+        userTikTokId: Number(userTikTokId),
+        storeName: store,
+        products: productsFromCart,
+        couponCode: couponCode || "",
+        shippingCost: cart.shippingCost ? parseFloat(cart.shippingCost) : 0,
+        transportadora: cart.shippingProvider || 'envio_gratis',
+        bankCode: selectedBank,
+      };
+    } else {
+      // Modo producto individual (lógica existente)
+      if (!product) {
+        alert("Error: No se pudo identificar el producto. Por favor, regresa a la página principal de la tienda.");
+        setLoadingSale(false);
+        return;
+      }
+
+      saleData = {
+        userTikTokId: Number(userTikTokId),
+        storeName: store,
+        products: [
+          {
+            productId: Number(product.id),
+            quantity: Number(quantity),
+            price: Number(product.price),
+          },
+        ],
+        couponCode: couponCode || "",
+        shippingCost: selectedShippingOption ? selectedShippingCost : 0,
+        transportadora: selectedShippingOption ? selectedShippingOption.provider : 'envio_gratis',
+        bankCode: selectedBank,
+      };
+    }
     try {
       const res = await axios.post(`${API_BASE_URL}/api/sales`, saleData);
       console.log('🔍 Respuesta del backend:', res.data);
@@ -438,7 +490,17 @@ export default function Payment() {
   };
 
   // Cálculos
-  const subtotal = product ? product.price * quantity : 0;
+  let subtotal = 0;
+  if (isCartCheckout && cart) {
+    // Calcular subtotal desde el carrito
+    subtotal = cart.cartItems.reduce((sum, item) => {
+      return sum + (parseFloat(item.unitPrice) * item.quantity);
+    }, 0);
+  } else if (product) {
+    // Calcular subtotal desde producto individual
+    subtotal = product.price * quantity;
+  }
+
   let totalDiscount = 0;
   if (discountType === "PERCENTAGE") {
     totalDiscount = (subtotal * discount) / 100;
@@ -447,7 +509,11 @@ export default function Payment() {
   }
   totalDiscount = Math.min(totalDiscount, subtotal); // Evitar descuento mayor que el subtotal
 
-  const total = subtotal - totalDiscount + selectedShippingCost;
+  const shippingCostToUse = isCartCheckout && cart && cart.shippingCost
+    ? parseFloat(cart.shippingCost)
+    : selectedShippingCost;
+
+  const total = subtotal - totalDiscount + shippingCostToUse;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -477,7 +543,63 @@ export default function Payment() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* Product Summary */}
-            {product && (
+            {loadingCart ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Cargando productos...</span>
+                </div>
+              </div>
+            ) : isCartCheckout && cart ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Tu Baúl ({cart.cartItems.length} productos)
+                </h2>
+                <div className="space-y-4">
+                  {cart.cartItems.map((item, index) => (
+                    <div key={index} className="flex items-start space-x-4 pb-4 border-b border-gray-100 last:border-b-0">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</h3>
+                        <div className="mt-1 space-y-0.5">
+                          {item.productVariant?.color && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-600">Color:</span>
+                              <span className="text-xs font-medium text-gray-900">{item.productVariant.color.name}</span>
+                            </div>
+                          )}
+                          {item.productVariant?.size && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-600">Talla:</span>
+                              <span className="text-xs font-medium text-gray-900">{item.productVariant.size.name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-600">Cantidad:</span>
+                            <span className="text-xs font-medium text-gray-900">{item.quantity}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm font-bold text-blue-600 mt-1">
+                          ${parseFloat(item.subtotal).toLocaleString()} COP
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-semibold text-gray-900">Subtotal:</span>
+                    <span className="text-lg font-bold text-blue-600">${subtotal.toLocaleString()} COP</span>
+                  </div>
+                </div>
+              </div>
+            ) : product ? (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Tu Producto</h2>
                 <div className="flex items-start space-x-4">
@@ -514,7 +636,7 @@ export default function Payment() {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Shipping Address */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -658,8 +780,8 @@ export default function Payment() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Envío:</span>
                   <span className="font-semibold">
-                    {selectedShippingCost > 0
-                      ? `$${selectedShippingCost.toLocaleString()} COP`
+                    {shippingCostToUse > 0
+                      ? `$${shippingCostToUse.toLocaleString()} COP`
                       : "Gratis"}
                   </span>
                 </div>
@@ -760,9 +882,9 @@ export default function Payment() {
                 onAddToCart={addToCart}
                 loadingSale={loadingSale}
                 disabledPayNow={!selectedBank}
-                disabledAddToCart={!storeConfig.cartEnabled}
+                disabledAddToCart={!storeConfig.cartEnabled || isCartCheckout}
                 cartTimeoutDays={storeConfig.cartTimeoutDays}
-                cartEnabled={storeConfig.cartEnabled}
+                cartEnabled={storeConfig.cartEnabled && !isCartCheckout}
               />
               {saleMessage && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
