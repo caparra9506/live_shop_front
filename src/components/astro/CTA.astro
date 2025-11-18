@@ -1,0 +1,60 @@
+---
+const categories = [
+  {
+    name: "Moda femenina",
+    image: "/categories/moda.jpg",
+  },
+  {
+    name: "Tienda importadora",
+    image: "/categories/importador.jpg",
+  },
+  {
+    name: "Perfumería",
+    image: "/categories/perfumes.jpg",
+  },
+  {
+    name: "Tecnología",
+    image: "/categories/tecnology.jpg",
+  },
+  {
+    name: "Moda masculina",
+    image: "/categories/moda-man.jpg",
+  },
+];
+---
+
+<section class="bg-[#0b001b] py-20 px-6">
+  <div class="max-w-6xl mx-auto text-center">
+    <h2 class="text-4xl font-black text-white mb-14">
+      Adaptamos tu tienda al
+      <span class="bg-gradient-to-r from-pink-500 to-purple-500 text-transparent bg-clip-text">
+        comercio digital
+      </span>
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+      {categories.map((cat) => (
+        <div
+          class="relative rounded-3xl overflow-hidden shadow-xl group transform hover:scale-105 transition duration-300"
+        >
+          <img
+            src={cat.image}
+            alt={cat.name}
+            class="w-full h-64 object-cover brightness-75 group-hover:brightness-90 transition"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent p-6 flex items-end">
+            <h3 class="text-white text-2xl font-bold">{cat.name}</h3>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Botón -->
+    <a
+      href="/register"
+      class="inline-block bg-purple-600 text-white font-bold px-6 py-3 rounded-lg shadow hover:bg-purple-700 hover:ring-2 hover:ring-purple-400 transition"
+    >
+      Obtén tu cuenta
+    </a>
+  </div>
+</section>

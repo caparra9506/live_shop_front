@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#F8FAFC;stop-opacity:0.85" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#bgGradient)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  
+  <!-- Shopping Cart Base -->
+  <path d="M25 35 L35 35 L42 65 L85 65 L90 45 L40 45" 
+        fill="none" 
+        stroke="url(#iconGradient)" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Cart Items (Products) -->
+  <circle cx="50" cy="58" r="3" fill="url(#iconGradient)"/>
+  <circle cx="65" cy="58" r="3" fill="url(#iconGradient)"/>
+  <circle cx="80" cy="58" r="3" fill="url(#iconGradient)"/>
+  
+  <!-- Cart Wheels -->
+  <circle cx="50" cy="75" r="4" fill="none" stroke="url(#iconGradient)" stroke-width="2.5"/>
+  <circle cx="75" cy="75" r="4" fill="none" stroke="url(#iconGradient)" stroke-width="2.5"/>
+  
+  <!-- TikTok-style Play Button (Musical Note) -->
+  <path d="M95 25 Q95 20, 100 20 Q105 20, 105 25 L105 50 Q100 55, 95 50 L95 35 Q90 40, 85 35 Q85 30, 90 30 Q95 30, 95 25 Z" 
+        fill="url(#iconGradient)" 
+        opacity="0.9"/>
+  
+  <!-- Live Indicator Dot -->
+  <circle cx="105" cy="25" r="3" fill="#EF4444">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Sparkles for "Live" Effect -->
+  <path d="M30 25 L32 30 L37 28 L32 33 L30 38 L28 33 L23 28 L28 30 Z" 
+        fill="url(#iconGradient)" 
+        opacity="0.6">
+    <animateTransform attributeName="transform" type="rotate" values="0 30 31.5;360 30 31.5" dur="3s" repeatCount="indefinite"/>
+  </path>
+  
+  <path d="M100 75 L101 78 L104 77 L101 80 L100 83 L99 80 L96 77 L99 78 Z" 
+        fill="url(#iconGradient)" 
+        opacity="0.5">
+    <animateTransform attributeName="transform" type="rotate" values="360 100 79;0 100 79" dur="4s" repeatCount="indefinite"/>
+  </path>
+</svg>

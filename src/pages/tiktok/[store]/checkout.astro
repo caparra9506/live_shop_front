@@ -1,0 +1,24 @@
+---
+import Checkout from "../../../components/react/tiktok/Checkout";
+import "../../../styles/global.css";
+
+// Definir `getStaticPaths()` para soportar rutas dinámicas
+export async function getStaticPaths() {
+  return [];
+}
+
+// Evita la pre-renderización para permitir generación en el servidor
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Compre Pues</title>
+</head>
+<body>
+  <Checkout client:load />
+</body>
+</html>

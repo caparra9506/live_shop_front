@@ -1,0 +1,41 @@
+{
+  "name": "compre_pues_front",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.1.2",
+    "@astrojs/react": "^4.2.1",
+    "@headlessui/react": "^2.2.0",
+    "@tailwindcss/vite": "^4.0.9",
+    "@tanstack/react-query": "^5.66.11",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "axios": "^1.8.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.477.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.2.0",
+    "recharts": "^2.15.1",
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^3.1.0",
+    "zustand": "^5.0.3"
+  },
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
+  "devDependencies": {
+    "@astrojs/tailwind": "^6.0.0",
+    "@tailwindcss/postcss": "^4.0.9",
+    "astro": "^5.4.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17"
+  }
+}

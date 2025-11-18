@@ -1,0 +1,32 @@
+---
+import ExpiredCartPayment from "../../components/react/cart/ExpiredCartPayment";
+
+export const prerender = false;
+
+// Obtener parámetros de la URL
+const url = new URL(Astro.request.url);
+const cartId = url.searchParams.get('cart');
+const token = url.searchParams.get('token');
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Completar Compra - LiveShop</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <ExpiredCartPayment 
+    cartId={cartId} 
+    token={token} 
+    client:load 
+  />
+</body>
+</html>

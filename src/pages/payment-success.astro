@@ -1,0 +1,259 @@
+---
+// payment-success.astro
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago Exitoso - LiveShop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: bounce 0.6s ease-out;
+        }
+
+        .success-icon::before {
+            content: '✓';
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(0.3); }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .payment-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .payment-ref {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .message {
+            color: #555;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon" id="statusIcon"></div>
+        <h1 id="statusTitle">¡Pago Enviado!</h1>
+        <p class="subtitle" id="statusSubtitle">Tu compra está siendo procesada</p>
+        
+        <div class="payment-info">
+            <p><strong>Estado:</strong> <span id="paymentStatus">Pendiente</span></p>
+            <div id="paymentRef" class="payment-ref"></div>
+            <p class="message">
+                📦 Tu guía de envío ha sido generada automáticamente.<br>
+                ✅ El proceso de tu pedido está en marcha.
+            </p>
+        </div>
+
+        <a href="/" class="btn">Volver al Inicio</a>
+    </div>
+
+    <script>
+        // DEBUG: Mostrar toda la URL para ver qué envía realmente ePayco
+        console.log('🔍 URL COMPLETA:', window.location.href);
+        console.log('🔍 QUERY STRING:', window.location.search);
+        
+        // Obtener parámetros de la URL que envía ePayco
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Probar todos los posibles nombres de parámetros que ePayco podría usar
+        const ref = urlParams.get('ref_payco') || urlParams.get('ref') || urlParams.get('x_ref_payco') || urlParams.get('referencia');
+        const estado = urlParams.get('estado') || urlParams.get('x_transaction_state') || urlParams.get('status');
+        const respuesta = urlParams.get('respuesta') || urlParams.get('x_response') || urlParams.get('response');
+        
+        console.log('🎯 PAYMENT SUCCESS PAGE LOADED');
+        console.log('📊 Parámetros encontrados:', { ref, estado, respuesta });
+        console.log('📋 TODOS LOS PARÁMETROS EN LA URL:');
+        
+        // Mostrar TODOS los parámetros que llegaron
+        for (const [key, value] of urlParams.entries()) {
+            console.log(`   ${key} = ${value}`);
+        }
+
+        if (ref) {
+            document.getElementById('paymentRef').innerHTML = `<strong>Referencia:</strong> ${ref}`;
+            
+            // 🚀 LLAMAR AL WEBHOOK N8N DESDE EL FRONTEND
+            console.log('📞 Notificando al backend para enviar webhook N8N...');
+            // Detectar si estamos en desarrollo o producción
+            const isProduction = window.location.hostname === 'liveshop.com.co';
+            const backendUrl = isProduction ? 'https://liveshop.com.co/api' : 'http://localhost:3001/api';
+            const webhookEndpoint = `${backendUrl}/sales/notify-n8n/${ref}`;
+            
+            console.log('🌐 URL del endpoint:', webhookEndpoint);
+            
+            fetch(webhookEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                console.log('📡 Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Respuesta del webhook N8N:', data);
+                if (data.success) {
+                    console.log('🎉 Webhook N8N enviado exitosamente!');
+                } else {
+                    console.error('❌ Error en webhook N8N:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('💥 Error llamando webhook N8N:', error);
+            });
+        } else {
+            console.log('❌ No se encontró referencia de pago en la URL');
+        }
+
+        // Mostrar estado del pago
+        if (estado || respuesta) {
+            console.log('Estado del pago:', { estado, respuesta });
+            
+            // Actualizar el estado en la página
+            const statusElement = document.getElementById('paymentStatus');
+            const titleElement = document.getElementById('statusTitle');
+            const subtitleElement = document.getElementById('statusSubtitle');
+            const iconElement = document.getElementById('statusIcon');
+            
+            if (estado === 'Aceptada' || respuesta === 'Aceptada') {
+                statusElement.textContent = 'Confirmado';
+                statusElement.style.color = '#4CAF50';
+                titleElement.textContent = '¡Pago Exitoso!';
+                subtitleElement.textContent = 'Tu compra ha sido procesada correctamente';
+                iconElement.style.background = '#4CAF50';
+            } else if (estado === 'Pendiente' || respuesta === 'Pendiente') {
+                statusElement.textContent = 'Pendiente';
+                statusElement.style.color = '#FF9800';
+                titleElement.textContent = '¡Pago Pendiente!';
+                subtitleElement.textContent = 'Tu pago está siendo verificado';
+                iconElement.style.background = '#FF9800';
+                iconElement.innerHTML = '<span style="color: white; font-size: 40px;">⏱</span>';
+            } else if (estado === 'Rechazada' || respuesta === 'Rechazada') {
+                statusElement.textContent = 'Rechazado';
+                statusElement.style.color = '#F44336';
+                titleElement.textContent = 'Pago Rechazado';
+                subtitleElement.textContent = 'Tu pago no pudo ser procesado';
+                iconElement.style.background = '#F44336';
+                iconElement.innerHTML = '<span style="color: white; font-size: 40px;">✗</span>';
+                // Si el pago fue rechazado, redirigir a error
+                setTimeout(() => {
+                    window.location.href = `/payment-error?ref=${ref}&status=failed`;
+                }, 2000);
+            } else {
+                // Estado desconocido, mantener como pendiente pero mostrar el valor real
+                statusElement.textContent = estado || respuesta || 'Pendiente';
+                statusElement.style.color = '#FF9800';
+                titleElement.textContent = '¡Pago Pendiente!';
+                subtitleElement.textContent = 'Tu pago está siendo verificado';
+                iconElement.style.background = '#FF9800';
+                iconElement.innerHTML = '<span style="color: white; font-size: 40px;">⏱</span>';
+            }
+        } else {
+            // Sin parámetros de estado, asumir pendiente
+            const statusElement = document.getElementById('paymentStatus');
+            const titleElement = document.getElementById('statusTitle');
+            const subtitleElement = document.getElementById('statusSubtitle');
+            const iconElement = document.getElementById('statusIcon');
+            
+            statusElement.textContent = 'Pendiente';
+            statusElement.style.color = '#FF9800';
+            titleElement.textContent = '¡Pago Pendiente!';
+            subtitleElement.textContent = 'Tu pago está siendo verificado';
+            iconElement.style.background = '#FF9800';
+            iconElement.innerHTML = '<span style="color: white; font-size: 40px;">⏱</span>';
+        }
+
+        // Auto-cerrar después de 15 segundos (opcional)
+        setTimeout(() => {
+            const shouldRedirect = confirm('¿Deseas volver al inicio?');
+            if (shouldRedirect) {
+                window.location.href = '/';
+            }
+        }, 15000);
+    </script>
+</body>
+</html>

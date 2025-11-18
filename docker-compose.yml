@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:80"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=4321
+      - PUBLIC_API_URL=http://componentes-backend-ofcomk-de6610-31-97-134-34.traefik.me
+      # Chatwoot Configuration
+      - PUBLIC_CHATWOOT_URL=https://n8n-chatwoot.shblkb.easypanel.host/app/accounts/1/dashboard
+      - PUBLIC_CHATWOOT_BASE_URL=https://n8n-chatwoot.shblkb.easypanel.host/app/accounts/1
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,23 @@
+---
+import Payment from "../../../components/react/tiktok/Payment";
+
+// Definir `getStaticPaths()` para soportar rutas dinámicas
+export async function getStaticPaths() {
+  return [];
+}
+
+// Evita la pre-renderización para permitir generación en el servidor
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pago - Compre Pues</title>
+</head>
+<body>
+  <Payment client:load />
+</body>
+</html>
