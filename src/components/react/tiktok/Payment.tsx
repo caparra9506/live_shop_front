@@ -142,9 +142,7 @@ export default function Payment() {
   const cotizarEnvio = async () => {
     setIsFetchingShipping(true);
 
-    const productId = sessionStorage.getItem("productId");
-    const cartId = sessionStorage.getItem("cartId");
-    const isCart = sessionStorage.getItem("isCartCheckout") === "true";
+    // Priorizar estados sobre sessionStorage
     const userTikTokId = sessionStorage.getItem("userTikTokId");
     let store = sessionStorage.getItem("storeName");
 
@@ -158,8 +156,10 @@ export default function Payment() {
       }
     }
 
-    console.log('🚚 Cotizar Envío - Mode:', isCart ? 'CART' : 'PRODUCT');
-    console.log('cartId:', cartId, 'productId:', productId);
+    console.log('🚚 Cotizar Envío - Mode:', isCartCheckout ? 'CART' : 'PRODUCT');
+    console.log('isCartCheckout state:', isCartCheckout);
+    console.log('cart state:', cart);
+    console.log('product state:', product);
 
     try {
       const requestData: any = {
@@ -167,11 +167,17 @@ export default function Payment() {
         storeName: store,
       };
 
-      // Modo carrito o producto individual
-      if (isCart && cartId) {
-        requestData.cartId = cartId;
-      } else if (productId) {
-        requestData.productId = productId;
+      // Modo carrito o producto individual - usar ESTADOS no sessionStorage
+      if (isCartCheckout && cart && cart.id) {
+        requestData.cartId = cart.id.toString();
+        console.log('📦 Cart mode - cartId:', cart.id);
+      } else if (product && product.id) {
+        requestData.productId = product.id.toString();
+        console.log('📦 Product mode - productId:', product.id);
+      } else {
+        console.error('❌ No cart or product available for shipping quote');
+        console.error('isCartCheckout:', isCartCheckout, 'cart:', cart, 'product:', product);
+        throw new Error('No product or cart information available');
       }
 
       console.log('📦 Shipping quote request:', requestData);
