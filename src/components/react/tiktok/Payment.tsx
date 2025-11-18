@@ -538,11 +538,20 @@ export default function Payment() {
   }
   totalDiscount = Math.min(totalDiscount, subtotal); // Evitar descuento mayor que el subtotal
 
-  const shippingCostToUse = isCartCheckout && cart && cart.shippingCost
-    ? parseFloat(cart.shippingCost)
-    : selectedShippingCost;
+  // Priorizar el costo de envío seleccionado por el usuario
+  const shippingCostToUse = selectedShippingCost ||
+    (isCartCheckout && cart && cart.shippingCost ? parseFloat(cart.shippingCost) : 0);
 
   const total = subtotal - totalDiscount + shippingCostToUse;
+
+  console.log('💵 Calculation:', {
+    subtotal,
+    totalDiscount,
+    selectedShippingCost,
+    cartShippingCost: cart?.shippingCost,
+    shippingCostToUse,
+    total
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
